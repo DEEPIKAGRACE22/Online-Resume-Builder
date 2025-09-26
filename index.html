@@ -1,0 +1,771 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Online Resume Builder</title>
+
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Google Fonts (for previews) -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Merriweather:wght@300;400;700&family=Roboto+Slab:wght@400;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --primary-color: #0d6efd;
+      --accent-color: #6c757d;
+      --resume-bg: #ffffff;
+      --resume-text: #222;
+    }
+
+    body { background:#f6f8fb; font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; color:#222; }
+
+    /* Layout */
+    .builder-wrapper { min-height:100vh; padding:20px; }
+    .panel-form { max-height: calc(100vh - 40px); overflow:auto; padding:18px; background:#fff; border-radius:10px; box-shadow: 0 6px 18px rgba(40,40,90,0.06); }
+    .panel-preview { max-height: calc(100vh - 40px); overflow:auto; padding:18px; background:linear-gradient(180deg,#fff,#fbfdff); border-radius:10px; box-shadow: 0 6px 18px rgba(40,40,90,0.06); }
+
+    /* Resume container preview */
+    .resume {
+      width: 100%;
+      max-width: 800px;
+      margin: 18px auto;
+      padding: 28px;
+      background:var(--resume-bg);
+      color:var(--resume-text);
+      border-radius:8px;
+      box-shadow: 0 8px 20px rgba(20,20,50,0.06);
+    }
+    .resume .name { font-size:28px; font-weight:700; letter-spacing:0.3px; }
+    .resume .headline { font-size:14px; color:var(--accent-color); margin-bottom:12px; }
+    .resume .section-title { font-weight:700; font-size:15px; margin-bottom:8px; color:var(--primary-color); }
+    .resume .muted { color:var(--accent-color); font-size:13px; }
+
+    /* Profile photo */
+    .profile-photo {
+      width:110px;height:110px;border-radius:8px;object-fit:cover;border:3px solid rgba(0,0,0,0.06);
+    }
+
+    /* Skill chips */
+    .skill-chip { display:inline-block; background:rgba(13,110,253,0.08); color:var(--primary-color); padding:6px 10px; margin:3px;border-radius:999px; font-size:13px; }
+
+    /* Buttons for block controls small */
+    .block-controls button { margin-right:6px; }
+
+    /* Templates */
+    .template-modern .name { font-family: 'Inter', sans-serif; letter-spacing:0.5px; }
+    .template-classic { font-family: 'Merriweather', serif; }
+    .template-classic .name { font-family: 'Merriweather', serif; color: var(--primary-color); }
+
+    /* Print styles */
+    @media print {
+      body * { visibility: hidden; }
+      .resume, .resume * { visibility: visible; }
+      .resume { position: absolute; left:0; top:0; width:100%; box-shadow:none; border:none; }
+      .no-print { display:none !important; }
+    }
+
+    /* Form small tweaks */
+    .form-section { border-left:3px solid rgba(13,110,253,0.06); padding-left:12px; margin-bottom:14px; }
+    .small-note { font-size:12px; color:#6b7280; }
+    .entry-card { border:1px solid #e9eef8; padding:10px; border-radius:8px; margin-bottom:10px; background:#fbfdff; }
+    .btn-icon { padding:5px 8px; font-size:14px; }
+
+    /* Responsive preview scale hint */
+    .preview-toolbar { display:flex; gap:8px; align-items:center; justify-content:flex-end; margin-bottom:10px; }
+
+    /* file input preview */
+    .img-placeholder { width:110px; height:110px; display:flex; align-items:center; justify-content:center; border-radius:8px; background:#f8fafc; color:#8b95a8; border: 1px dashed #e6eefb; font-size:13px; }
+  </style>
+</head>
+<body>
+
+<div class="container-fluid builder-wrapper">
+  <div class="row g-3">
+
+    <!-- LEFT: Form -->
+    <div class="col-lg-4 col-md-5">
+      <div class="panel-form">
+        <h4 class="mb-2">Online Resume Builder</h4>
+        <p class="small-note">Fill the fields — preview updates instantly. Use Save/Export to keep your work.</p>
+
+        <!-- Controls: template, color, font -->
+        <div class="mb-3">
+          <label class="form-label">Template</label>
+          <select id="templateSelect" class="form-select mb-2">
+            <option value="modern">Modern (Default)</option>
+            <option value="classic">Classic (Serif)</option>
+          </select>
+
+          <label class="form-label">Primary Color</label>
+          <input type="color" id="primaryColor" class="form-control form-control-color mb-2" value="#0d6efd" title="Choose primary color">
+
+          <label class="form-label">Font</label>
+          <select id="fontSelect" class="form-select">
+            <option value="Inter, sans-serif" selected>Inter (Clean)</option>
+            <option value="'Merriweather', serif">Merriweather (Serif)</option>
+            <option value="'Roboto Slab', serif">Roboto Slab</option>
+          </select>
+        </div>
+
+        <hr>
+
+        <!-- Personal Info -->
+        <div class="form-section mb-3">
+          <h6 class="mb-2">Personal Information</h6>
+          <div class="row g-2">
+            <div class="col-8">
+              <input type="text" id="fullName" class="form-control" placeholder="Full name">
+            </div>
+            <div class="col-4 d-flex align-items-center">
+              <div id="photoWrap" class="img-placeholder" title="Profile photo preview">
+                <span>Photo</span>
+              </div>
+            </div>
+            <div class="col-12">
+              <input type="text" id="title" class="form-control" placeholder="Job title or headline">
+            </div>
+            <div class="col-12">
+              <textarea id="summary" rows="3" class="form-control" placeholder="Professional summary (short)"></textarea>
+            </div>
+            <div class="col-6"><input id="email" type="email" class="form-control" placeholder="Email"></div>
+            <div class="col-6"><input id="phone" type="text" class="form-control" placeholder="Phone"></div>
+            <div class="col-6"><input id="location" type="text" class="form-control" placeholder="City, Country"></div>
+            <div class="col-6"><input id="linkedin" type="text" class="form-control" placeholder="LinkedIn / Portfolio URL"></div>
+            <div class="col-12 d-flex gap-2">
+              <input id="photoInput" type="file" accept="image/*" class="form-control form-control-sm">
+              <button id="removePhoto" class="btn btn-outline-secondary btn-sm">Remove</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Education -->
+        <div class="form-section mb-3">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="mb-0">Education</h6>
+            <button id="addEducation" class="btn btn-sm btn-primary">+ Add</button>
+          </div>
+          <div id="educationList"></div>
+        </div>
+
+        <!-- Experience -->
+        <div class="form-section mb-3">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="mb-0">Work Experience</h6>
+            <button id="addExperience" class="btn btn-sm btn-primary">+ Add</button>
+          </div>
+          <div id="experienceList"></div>
+        </div>
+
+        <!-- Skills -->
+        <div class="form-section mb-3">
+          <h6 class="mb-2">Skills</h6>
+          <div class="input-group mb-2">
+            <input id="skillInput" placeholder="Type a skill and press Enter / Add" class="form-control" />
+            <button id="addSkillBtn" class="btn btn-outline-primary">Add Skill</button>
+          </div>
+          <div id="skillsContainer" class="mb-1"></div>
+          <small class="text-muted">Click a skill to remove it.</small>
+        </div>
+
+        <!-- Buttons: Save/Load/Export -->
+        <div class="d-grid gap-2 mt-3">
+          <div class="d-flex gap-2">
+            <button id="saveBtn" class="btn btn-success btn-sm w-100">Save (Local)</button>
+            <button id="loadBtn" class="btn btn-outline-success btn-sm w-100">Load</button>
+          </div>
+          <div class="d-flex gap-2">
+            <button id="exportJson" class="btn btn-secondary btn-sm w-100">Export JSON</button>
+            <input id="importFile" type="file" accept=".json" class="form-control form-control-sm" />
+          </div>
+          <div class="d-flex gap-2">
+            <button id="printBtn" class="btn btn-primary btn-sm w-100">Print / Save as PDF</button>
+            <button id="resetBtn" class="btn btn-outline-danger btn-sm w-100">Reset</button>
+          </div>
+        </div>
+
+        <hr class="mt-3">
+
+        <p class="small-note">Tip: After customizing, click "Print" and choose "Save as PDF" for a high-quality export.</p>
+      </div>
+    </div>
+
+    <!-- RIGHT: Preview -->
+    <div class="col-lg-8 col-md-7">
+      <div class="panel-preview">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <div>
+            <strong>Live Preview</strong>
+            <div class="small-text text-muted">Changes appear instantly</div>
+          </div>
+          <div class="d-flex gap-2">
+            <select id="previewScale" class="form-select form-select-sm" style="width:120px">
+              <option value="1">100%</option>
+              <option value="0.9">90%</option>
+              <option value="0.8">80%</option>
+              <option value="0.7">70%</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="resumePreviewWrap" class="text-center">
+          <div id="resumePreview" class="resume template-modern" style="--primary-color:var(--primary-color);">
+            <!-- Top row -->
+            <div class="d-flex justify-content-between align-items-start">
+              <div class="text-start">
+                <div class="name" id="rv-name">Your Name</div>
+                <div class="headline" id="rv-title">Job Title · Location</div>
+                <div class="muted" id="rv-contact">email · phone · linkedin</div>
+              </div>
+              <div>
+                <img id="rv-photo" alt="Profile" class="profile-photo" src="" style="display:none;" />
+              </div>
+            </div>
+
+            <hr>
+
+            <!-- Summary -->
+            <div class="mb-3">
+              <div class="section-title">Summary</div>
+              <div id="rv-summary" class="muted">Short professional summary goes here.</div>
+            </div>
+
+            <!-- Experience Section -->
+            <div id="rv-experience" class="mb-3">
+              <div class="section-title">Work Experience</div>
+              <!-- experience items inserted here -->
+            </div>
+
+            <div id="rv-education" class="mb-3">
+              <div class="section-title">Education</div>
+              <!-- education items inserted here -->
+            </div>
+
+            <div id="rv-skills" class="mb-3">
+              <div class="section-title">Skills</div>
+              <!-- skills chips -->
+            </div>
+
+            <div class="mt-3 muted" style="font-size:12px; border-top:1px dashed #eee; padding-top:8px;">Generated by Online Resume Builder</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- jQuery and Bootstrap JS -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+/* =========================
+   Resume Builder JS (jQuery)
+   ========================= */
+
+/* --- State --- */
+const state = {
+  profile: { name: '', title:'', summary:'', email:'', phone:'', location:'', linkedin:'', photoData: '' },
+  education: [],   // array of {id, school, degree, start, end, description}
+  experience: [],  // array of {id, company, role, start, end, description}
+  skills: [],
+  template: 'modern',
+  primaryColor: '#0d6efd',
+  fontFamily: "Inter, sans-serif"
+};
+
+const uid = () => 'id'+Math.random().toString(36).slice(2,9);
+
+/* --- Helpers: create entry cards --- */
+function createEducationEntry(entry = null){
+  const id = entry?.id || uid();
+  const school = entry?.school || '';
+  const degree = entry?.degree || '';
+  const start = entry?.start || '';
+  const end = entry?.end || '';
+  const description = entry?.description || '';
+  const $card = $(`
+    <div class="entry-card" data-id="${id}">
+      <div class="d-flex justify-content-between align-items-start">
+        <div><strong>${school || 'New Education'}</strong><div class="small muted">${degree}</div></div>
+        <div class="block-controls">
+          <button class="btn btn-sm btn-secondary btn-icon move-up">↑</button>
+          <button class="btn btn-sm btn-secondary btn-icon move-down">↓</button>
+          <button class="btn btn-sm btn-outline-danger remove-entry">✕</button>
+        </div>
+      </div>
+      <div class="mt-2">
+        <input type="text" class="form-control mb-2 edu-school" placeholder="School / University" value="${escapeHtml(school)}">
+        <input type="text" class="form-control mb-2 edu-degree" placeholder="Degree / Program" value="${escapeHtml(degree)}">
+        <div class="row g-2">
+          <div class="col-6"><input type="text" class="form-control edu-start" placeholder="Start (e.g., 2018)" value="${escapeHtml(start)}"></div>
+          <div class="col-6"><input type="text" class="form-control edu-end" placeholder="End (e.g., 2022 or Present)" value="${escapeHtml(end)}"></div>
+        </div>
+        <textarea class="form-control mt-2 edu-desc" rows="2" placeholder="Description / achievements">${escapeHtml(description)}</textarea>
+      </div>
+    </div>
+  `);
+  attachEducationHandlers($card);
+  return $card;
+}
+
+function createExperienceEntry(entry = null){
+  const id = entry?.id || uid();
+  const company = entry?.company || '';
+  const role = entry?.role || '';
+  const start = entry?.start || '';
+  const end = entry?.end || '';
+  const description = entry?.description || '';
+  const $card = $(`
+    <div class="entry-card" data-id="${id}">
+      <div class="d-flex justify-content-between align-items-start">
+        <div><strong>${company || 'New Experience'}</strong><div class="small muted">${role}</div></div>
+        <div class="block-controls">
+          <button class="btn btn-sm btn-secondary btn-icon move-up">↑</button>
+          <button class="btn btn-sm btn-secondary btn-icon move-down">↓</button>
+          <button class="btn btn-sm btn-outline-danger remove-entry">✕</button>
+        </div>
+      </div>
+      <div class="mt-2">
+        <input type="text" class="form-control mb-2 exp-company" placeholder="Company" value="${escapeHtml(company)}">
+        <input type="text" class="form-control mb-2 exp-role" placeholder="Role / Job Title" value="${escapeHtml(role)}">
+        <div class="row g-2">
+          <div class="col-6"><input type="text" class="form-control exp-start" placeholder="Start" value="${escapeHtml(start)}"></div>
+          <div class="col-6"><input type="text" class="form-control exp-end" placeholder="End" value="${escapeHtml(end)}"></div>
+        </div>
+        <textarea class="form-control mt-2 exp-desc" rows="3" placeholder="Responsibilities and achievements">${escapeHtml(description)}</textarea>
+      </div>
+    </div>
+  `);
+  attachExperienceHandlers($card);
+  return $card;
+}
+
+/* --- Attach handlers inside each card for move/remove --- */
+function attachEducationHandlers($card){
+  $card.find('.remove-entry').on('click', function(){
+    const id = $card.data('id');
+    state.education = state.education.filter(e => e.id !== id);
+    $card.remove();
+    renderPreview();
+  });
+  $card.find('.move-up').on('click', function(){
+    const id = $card.data('id');
+    const idx = state.education.findIndex(e => e.id === id);
+    if(idx > 0) { [state.education[idx-1], state.education[idx]] = [state.education[idx], state.education[idx-1]]; refreshEducationList(); renderPreview(); }
+  });
+  $card.find('.move-down').on('click', function(){
+    const id = $card.data('id');
+    const idx = state.education.findIndex(e => e.id === id);
+    if(idx < state.education.length-1) { [state.education[idx+1], state.education[idx]] = [state.education[idx], state.education[idx+1]]; refreshEducationList(); renderPreview(); }
+  });
+
+  // Input change syncing
+  $card.find('.edu-school').on('input', function(){
+    const id = $card.data('id'); const v = $(this).val();
+    const el = state.education.find(e=>e.id===id); if(el) { el.school = v; refreshEducationList(); renderPreview(); }
+  });
+  $card.find('.edu-degree').on('input', function(){
+    const id = $card.data('id'); const v = $(this).val();
+    const el = state.education.find(e=>e.id===id); if(el) { el.degree = v; refreshEducationList(); renderPreview(); }
+  });
+  $card.find('.edu-start').on('input', function(){
+    const id = $card.data('id'); const v = $(this).val();
+    const el = state.education.find(e=>e.id===id); if(el) { el.start = v; renderPreview(); }
+  });
+  $card.find('.edu-end').on('input', function(){
+    const id = $card.data('id'); const v = $(this).val();
+    const el = state.education.find(e=>e.id===id); if(el) { el.end = v; renderPreview(); }
+  });
+  $card.find('.edu-desc').on('input', function(){
+    const id = $card.data('id'); const v = $(this).val();
+    const el = state.education.find(e=>e.id===id); if(el) { el.description = v; renderPreview(); }
+  });
+}
+
+function attachExperienceHandlers($card){
+  $card.find('.remove-entry').on('click', function(){
+    const id = $card.data('id');
+    state.experience = state.experience.filter(e => e.id !== id);
+    $card.remove();
+    renderPreview();
+  });
+  $card.find('.move-up').on('click', function(){
+    const id = $card.data('id');
+    const idx = state.experience.findIndex(e => e.id === id);
+    if(idx > 0) { [state.experience[idx-1], state.experience[idx]] = [state.experience[idx], state.experience[idx-1]]; refreshExperienceList(); renderPreview(); }
+  });
+  $card.find('.move-down').on('click', function(){
+    const id = $card.data('id');
+    const idx = state.experience.findIndex(e => e.id === id);
+    if(idx < state.experience.length-1) { [state.experience[idx+1], state.experience[idx]] = [state.experience[idx], state.experience[idx+1]]; refreshExperienceList(); renderPreview(); }
+  });
+
+  $card.find('.exp-company').on('input', function(){
+    const id = $card.data('id'); const v = $(this).val();
+    const el = state.experience.find(e=>e.id===id); if(el) { el.company = v; refreshExperienceList(); renderPreview(); }
+  });
+  $card.find('.exp-role').on('input', function(){
+    const id = $card.data('id'); const v = $(this).val();
+    const el = state.experience.find(e=>e.id===id); if(el) { el.role = v; refreshExperienceList(); renderPreview(); }
+  });
+  $card.find('.exp-start').on('input', function(){
+    const id = $card.data('id'); const v = $(this).val();
+    const el = state.experience.find(e=>e.id===id); if(el) { el.start = v; renderPreview(); }
+  });
+  $card.find('.exp-end').on('input', function(){
+    const id = $card.data('id'); const v = $(this).val();
+    const el = state.experience.find(e=>e.id===id); if(el) { el.end = v; renderPreview(); }
+  });
+  $card.find('.exp-desc').on('input', function(){
+    const id = $card.data('id'); const v = $(this).val();
+    const el = state.experience.find(e=>e.id===id); if(el) { el.description = v; renderPreview(); }
+  });
+}
+
+/* --- Render lists in form --- */
+function refreshEducationList(){
+  const $list = $('#educationList').empty();
+  state.education.forEach(e => {
+    const $entry = createEducationEntry(e);
+    $entry.attr('data-id', e.id);
+    $list.append($entry);
+  });
+}
+
+function refreshExperienceList(){
+  const $list = $('#experienceList').empty();
+  state.experience.forEach(e => {
+    const $entry = createExperienceEntry(e);
+    $entry.attr('data-id', e.id);
+    $list.append($entry);
+  });
+}
+
+/* --- Skills management --- */
+function renderSkills(){
+  const $cont = $('#skillsContainer').empty();
+  state.skills.forEach((s, idx) => {
+    const $chip = $(`<span class="skill-chip" data-index="${idx}">${escapeHtml(s)}</span>`);
+    $chip.on('click', function(){ // remove on click
+      state.skills.splice(idx,1);
+      renderSkills(); renderPreview();
+    });
+    $cont.append($chip);
+  });
+}
+
+/* --- Photo handling --- */
+function setPhotoPreview(dataUrl){
+  const $img = $('#rv-photo');
+  if(dataUrl){
+    $img.attr('src', dataUrl).show();
+    $('#photoWrap').html(`<img src="${dataUrl}" style="width:100%;height:100%;border-radius:8px;object-fit:cover;" />`);
+  } else {
+    $img.hide().attr('src','');
+    $('#photoWrap').html('<span>Photo</span>');
+  }
+}
+
+/* --- Real-time sync of personal info fields --- */
+function bindPersonalInfo(){
+  $('#fullName').on('input', function(){ state.profile.name = $(this).val(); renderPreview(); });
+  $('#title').on('input', function(){ state.profile.title = $(this).val(); renderPreview(); });
+  $('#summary').on('input', function(){ state.profile.summary = $(this).val(); renderPreview(); });
+  $('#email').on('input', function(){ state.profile.email = $(this).val(); renderPreview(); });
+  $('#phone').on('input', function(){ state.profile.phone = $(this).val(); renderPreview(); });
+  $('#location').on('input', function(){ state.profile.location = $(this).val(); renderPreview(); });
+  $('#linkedin').on('input', function(){ state.profile.linkedin = $(this).val(); renderPreview(); });
+
+  // photo input
+  $('#photoInput').on('change', function(e){
+    const file = this.files && this.files[0];
+    if(file){
+      const reader = new FileReader();
+      reader.onload = function(ev){
+        state.profile.photoData = ev.target.result;
+        setPhotoPreview(state.profile.photoData);
+        renderPreview();
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+  $('#removePhoto').on('click', function(){
+    state.profile.photoData = '';
+    $('#photoInput').val('');
+    setPhotoPreview('');
+    renderPreview();
+  });
+}
+
+/* --- Add new education/experience entries --- */
+$('#addEducation').on('click', function(){
+  const newEntry = { id: uid(), school:'', degree:'', start:'', end:'', description:'' };
+  state.education.push(newEntry);
+  refreshEducationList(); renderPreview();
+});
+$('#addExperience').on('click', function(){
+  const newEntry = { id: uid(), company:'', role:'', start:'', end:'', description:'' };
+  state.experience.push(newEntry);
+  refreshExperienceList(); renderPreview();
+});
+
+/* --- Skills input --- */
+$('#addSkillBtn').on('click', function(){ addSkillFromInput(); });
+$('#skillInput').on('keydown', function(e){
+  if(e.key === 'Enter'){ e.preventDefault(); addSkillFromInput(); }
+});
+function addSkillFromInput(){
+  const v = $('#skillInput').val().trim();
+  if(!v) return;
+  // Allow comma separated
+  const parts = v.split(',').map(s=>s.trim()).filter(Boolean);
+  parts.forEach(p=>{
+    if(p && !state.skills.includes(p)) state.skills.push(p);
+  });
+  $('#skillInput').val('');
+  renderSkills(); renderPreview();
+}
+
+/* --- Template & style controls --- */
+$('#templateSelect').on('change', function(){ state.template = $(this).val(); applyStyle(); renderPreview(); });
+$('#primaryColor').on('input', function(){ state.primaryColor = $(this).val(); applyStyle(); });
+$('#fontSelect').on('change', function(){ state.fontFamily = $(this).val(); applyStyle(); });
+
+function applyStyle(){
+  // apply root colors & classes
+  document.documentElement.style.setProperty('--primary-color', state.primaryColor);
+  document.documentElement.style.setProperty('--resume-text', '#222');
+  // set font to preview area
+  $('#resumePreview').css('font-family', state.fontFamily);
+  // template classes
+  $('#resumePreview').removeClass('template-modern template-classic');
+  if(state.template === 'modern') $('#resumePreview').addClass('template-modern'); else $('#resumePreview').addClass('template-classic');
+}
+
+/* --- Render Preview from state --- */
+function renderPreview(){
+  // Basic profile
+  $('#rv-name').text(state.profile.name || 'Your Name');
+  $('#rv-title').text((state.profile.title || 'Job Title') + (state.profile.location ? ' · ' + state.profile.location : ''));
+  const contactParts = [];
+  if(state.profile.email) contactParts.push(state.profile.email);
+  if(state.profile.phone) contactParts.push(state.profile.phone);
+  if(state.profile.linkedin) contactParts.push(state.profile.linkedin);
+  $('#rv-contact').text(contactParts.join(' · ') || 'email · phone · linkedin');
+  $('#rv-summary').text(state.profile.summary || 'Short professional summary goes here.');
+
+  // Photo
+  setPhotoPreview(state.profile.photoData);
+
+  // Experience
+  const $expWrap = $('#rv-experience').empty();
+  $expWrap.append('<div class="section-title">Work Experience</div>');
+  if(state.experience.length === 0){
+    $expWrap.append('<div class="muted small">No work experience added yet.</div>');
+  } else {
+    state.experience.forEach(e => {
+      const $node = $(`
+        <div class="mb-2">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div style="font-weight:600;">${escapeHtml(e.company || '')} <span class="muted" style="font-weight:400;">— ${escapeHtml(e.role || '')}</span></div>
+            <div class="muted" style="font-size:13px;">${escapeHtml(e.start || '')} — ${escapeHtml(e.end || '')}</div>
+          </div>
+          <div class="muted" style="margin-top:6px; font-size:14px;">${nl2br(escapeHtml(e.description || ''))}</div>
+        </div>
+      `);
+      $expWrap.append($node);
+    });
+  }
+
+  // Education
+  const $eduWrap = $('#rv-education').empty();
+  $eduWrap.append('<div class="section-title">Education</div>');
+  if(state.education.length === 0){
+    $eduWrap.append('<div class="muted small">No education added yet.</div>');
+  } else {
+    state.education.forEach(ed => {
+      const $node = $(`
+        <div class="mb-2">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div style="font-weight:600;">${escapeHtml(ed.school || '')} <span class="muted" style="font-weight:400;">— ${escapeHtml(ed.degree || '')}</span></div>
+            <div class="muted" style="font-size:13px;">${escapeHtml(ed.start || '')} — ${escapeHtml(ed.end || '')}</div>
+          </div>
+          <div class="muted" style="margin-top:6px; font-size:14px;">${nl2br(escapeHtml(ed.description || ''))}</div>
+        </div>
+      `);
+      $eduWrap.append($node);
+    });
+  }
+
+  // Skills
+  const $skillsWrap = $('#rv-skills').empty();
+  $skillsWrap.append('<div class="section-title">Skills</div>');
+  if(state.skills.length === 0){
+    $skillsWrap.append('<div class="muted small">No skills added yet.</div>');
+  } else {
+    const $chips = $('<div></div>');
+    state.skills.forEach(s => { $chips.append(`<span class="skill-chip">${escapeHtml(s)}</span>`); });
+    $skillsWrap.append($chips);
+  }
+}
+
+/* --- Utilities: escape html --- */
+function escapeHtml(text){
+  if(!text) return '';
+  return text.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
+}
+function nl2br(text){ return String(text).replace(/\n/g, '<br/>'); }
+
+/* --- Save / Load / Export / Import --- */
+$('#saveBtn').on('click', function(){
+  const payload = JSON.stringify(state);
+  localStorage.setItem('resume_builder_v1', payload);
+  alert('Saved locally (browser storage).');
+});
+$('#loadBtn').on('click', function(){
+  const raw = localStorage.getItem('resume_builder_v1');
+  if(!raw){ alert('No saved resume found in local storage.'); return; }
+  try {
+    const data = JSON.parse(raw);
+    loadState(data);
+  } catch(err){ alert('Failed to load: ' + err.message); }
+});
+
+$('#exportJson').on('click', function(){
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'resume-data.json'; a.click();
+  URL.revokeObjectURL(url);
+});
+
+$('#importFile').on('change', function(e){
+  const f = this.files && this.files[0];
+  if(!f) return;
+  const reader = new FileReader();
+  reader.onload = function(ev){
+    try {
+      const data = JSON.parse(ev.target.result);
+      loadState(data);
+      $('#importFile').val('');
+    } catch(err){ alert('Invalid JSON file'); }
+  };
+  reader.readAsText(f);
+});
+
+$('#resetBtn').on('click', function(){
+  if(!confirm('Reset all fields? This cannot be undone.')) return;
+  localStorage.removeItem('resume_builder_v1');
+  location.reload();
+});
+
+/* --- Printing --- */
+$('#printBtn').on('click', function(){
+  // Hide interactive controls in print via CSS @media print
+  window.print();
+});
+
+/* --- Preview scale --- */
+$('#previewScale').on('change', function(){
+  const val = parseFloat($(this).val());
+  $('#resumePreviewWrap').css('transform', `scale(${val})`);
+  $('#resumePreviewWrap').css('transform-origin', 'top center');
+});
+
+/* --- Load state into UI --- */
+function loadState(data){
+  // Validate basic structure, fallback to defaults when missing
+  state.profile = data.profile || { name:'', title:'', summary:'', email:'', phone:'', location:'', linkedin:'', photoData:'' };
+  state.education = Array.isArray(data.education) ? data.education : [];
+  state.experience = Array.isArray(data.experience) ? data.experience : [];
+  state.skills = Array.isArray(data.skills) ? data.skills : [];
+  state.template = data.template || 'modern';
+  state.primaryColor = data.primaryColor || '#0d6efd';
+  state.fontFamily = data.fontFamily || "Inter, sans-serif";
+
+  // Reflect in form fields
+  $('#fullName').val(state.profile.name);
+  $('#title').val(state.profile.title);
+  $('#summary').val(state.profile.summary);
+  $('#email').val(state.profile.email);
+  $('#phone').val(state.profile.phone);
+  $('#location').val(state.profile.location);
+  $('#linkedin').val(state.profile.linkedin);
+  $('#photoInput').val('');
+  setPhotoPreview(state.profile.photoData);
+
+  $('#templateSelect').val(state.template);
+  $('#primaryColor').val(state.primaryColor);
+  $('#fontSelect').val(state.fontFamily);
+
+  refreshEducationList();
+  refreshExperienceList();
+  renderSkills();
+  applyStyle();
+  renderPreview();
+}
+
+/* --- Init: default sample data to make the preview look good --- */
+function initDefault(){
+  // Sample starter data to show features
+  state.profile = {
+    name: 'Asha Sharma',
+    title: 'Frontend Developer',
+    summary: 'Passionate frontend developer building responsive and accessible web applications. Skilled in HTML, CSS, JavaScript, and Bootstrap.',
+    email: 'asha.sharma@example.com',
+    phone: '+91 98xxxxxxx',
+    location: 'Bengaluru, India',
+    linkedin: 'linkedin.com/in/ashasharma',
+    photoData: ''
+  };
+  state.education = [
+    { id: uid(), school: 'Christ University', degree: 'B.Tech — Computer Science', start: '2019', end: '2023', description: 'Graduated with CGPA 8.3. Led coding club and built multiple projects.' }
+  ];
+  state.experience = [
+    { id: uid(), company: 'Intern Co', role: 'Frontend Intern', start: 'Jun 2023', end: 'Dec 2023', description: 'Built UI components and assisted with responsive redesign. Improved page load time by 18%.' }
+  ];
+  state.skills = ['HTML','CSS','JavaScript','Bootstrap','jQuery','Responsive Design'];
+  applyStyle();
+  // Render form lists
+  refreshEducationList();
+  refreshExperienceList();
+  renderSkills();
+  // Populate personal inputs
+  $('#fullName').val(state.profile.name);
+  $('#title').val(state.profile.title);
+  $('#summary').val(state.profile.summary);
+  $('#email').val(state.profile.email);
+  $('#phone').val(state.profile.phone);
+  $('#location').val(state.profile.location);
+  $('#linkedin').val(state.profile.linkedin);
+
+  renderPreview();
+}
+
+/* --- Escape utility for safety (already used) --- */
+
+/* --- Boot up --- */
+$(function(){
+  bindPersonalInfo();
+  initDefault();
+
+  // If there's saved data in localStorage, load it automatically
+  const saved = localStorage.getItem('resume_builder_v1');
+  if(saved){
+    try {
+      const parsed = JSON.parse(saved);
+      // don't overwrite by default; give user priority — but load quietly for convenience
+      // we'll load it anyway:
+      loadState(parsed);
+    } catch(e){}
+  }
+});
+
+/* --- Small helper to prevent XSS in certain contexts --- */
+/* (escapeHtml defined above) */
+
+</script>
+</body>
+</html>
